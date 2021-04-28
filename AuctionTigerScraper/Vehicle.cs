@@ -1,8 +1,10 @@
-﻿using System.Text.Json;
+﻿using System;
+using System.Text.Json;
 namespace AuctionTigerScraper
 {
     public class Vehicle
     {
+        public Guid Id { get; set; }
         public string Name { get; set; }
         public int Year { get; set; }
         public Registration RegistrationNumber { get; set; }
@@ -11,10 +13,12 @@ namespace AuctionTigerScraper
         public int OwnershipStatus { get; set; }
         public string Remarks { get; set; }
         public string Reference { get; set; }
+        public Guid AuctionId { get; set; }
         internal Auction Auction { get; set; }
 
-        public Vehicle(Auction auction, string carname, string number, string fuel, string year, string address, string status="", string remarks="", string reference="")
+        public Vehicle(Guid id, Auction auction, string carname, string number, string fuel, string year, string address, Guid auctionId, string status="", string remarks="", string reference="")
         {
+            Id = id;
             Auction = auction;
             Name = carname;
             RegistrationNumber = new Registration(number);
@@ -26,6 +30,7 @@ namespace AuctionTigerScraper
             OwnershipStatus = _status;
             Remarks = remarks;
             Reference = reference;
+            AuctionId = auctionId;
         }
     }
 }

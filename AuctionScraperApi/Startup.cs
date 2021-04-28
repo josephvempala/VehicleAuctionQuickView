@@ -1,3 +1,5 @@
+using AuctionScraperApi.Configuration;
+using AuctionTigerScraper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -26,7 +28,12 @@ namespace AuctionScraperApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
+            var loginDetails = Configuration.GetSection(nameof(UserLogin)).Get<UserLogin>();
+            services.AddSingleton(provider => {
+                AuctionScraper auctionScraper = new AuctionScraper();
+                auctionScraper.InitializeScraperAsync(loginDetails.Username, loginDetails.Password).Wait();
+                return auctionScraper;
+            });
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
