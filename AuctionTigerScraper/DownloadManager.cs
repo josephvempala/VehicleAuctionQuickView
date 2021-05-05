@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using PuppeteerSharp;
 namespace AuctionTigerScraper
 {
-    internal class DownloadManager
+    public class DownloadManager
     {
         private readonly string _downloadDirectory;
         public DownloadManager(string downloadDirectory)

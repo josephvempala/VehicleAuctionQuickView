@@ -35,16 +35,17 @@ namespace AuctionScraperApi.Controllers
 
         // GET api/<ValuesController>/5
         [HttpGet("{id}")]
-        public ActionResult<Vehicle> Get(Guid id)
+        public async Task<ActionResult<Vehicle>> Get(Guid id)
         {
-            var vehicle = _auctionScraper.Vehicles.Where(vehicle => vehicle.Id == id).FirstOrDefault();
-            if(vehicle is null)
+            var vehicles = await _auctionScraper.GetVehicles();
+            var vehicle = vehicles.Where(vehicle => vehicle.Id == id).FirstOrDefault();
+            if (vehicle is null)
                 return NotFound();
             return Ok(vehicle);
         }
 
         [HttpPost]
-        public async Task<ActionResult<IEnumerable<Vehicle>>> Get([FromBody] IEnumerable<string> vehicle_names)
+        public async Task<ActionResult<IEnumerable<Vehicle>>> Get(IEnumerable<string> vehicle_names)
         {
             var vehicles = await _auctionScraper.GetDesirableVehiclesAsync(vehicle_names);
             if (vehicles.Count == 0)

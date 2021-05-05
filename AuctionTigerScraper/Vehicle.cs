@@ -13,10 +13,10 @@ namespace AuctionTigerScraper
         public int OwnershipStatus { get; set; }
         public string Remarks { get; set; }
         public string Reference { get; set; }
-        public Guid AuctionId { get; set; }
         internal Auction Auction { get; set; }
+        public string PicturesPath { get; set; }
 
-        public Vehicle(Guid id, Auction auction, string carname, string number, string fuel, string year, string address, Guid auctionId, string status="", string remarks="", string reference="")
+        public Vehicle(Guid id, Auction auction, string carname, string number, string fuel, string year, string address,  string status="", string remarks="", string reference="")
         {
             Id = id;
             Auction = auction;
@@ -30,7 +30,6 @@ namespace AuctionTigerScraper
             OwnershipStatus = _status;
             Remarks = remarks;
             Reference = reference;
-            AuctionId = auctionId;
         }
     }
 }

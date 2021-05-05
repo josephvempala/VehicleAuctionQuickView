@@ -8,15 +8,10 @@ namespace AuctionTigerScraper
 {
     internal static class Helpers
     {
-        public static bool CompareDescription(this List<Auction> currentAuctions, List<Auction> newAuctions)
+        public static bool CompareDescription(this Auction currentAuction, Auction newAuction)
         {
-            if (currentAuctions.Count != newAuctions.Count)
+            if (currentAuction.Description.GetHashCode() != newAuction.Description.GetHashCode())
                 return false;
-            for(int i=0;i<currentAuctions.Count;i++)
-            {
-                if (currentAuctions[i].Description.GetHashCode() != newAuctions[i].Description.GetHashCode())
-                    return false;
-            }
             return true;
         }
     }

@@ -29,6 +29,7 @@ namespace AuctionScraperApi
         public void ConfigureServices(IServiceCollection services)
         {
             var loginDetails = Configuration.GetSection(nameof(UserLogin)).Get<UserLogin>();
+            var Precaching = Configuration.GetSection(nameof(ScraperPrecaching)).Get<ScraperPrecaching>();
             services.AddSingleton(provider => {
                 AuctionScraper auctionScraper = new AuctionScraper();
                 auctionScraper.InitializeScraperAsync(loginDetails.Username, loginDetails.Password).Wait();
