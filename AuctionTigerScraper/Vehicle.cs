@@ -1,5 +1,8 @@
 ﻿using System;
-using System.Text.Json;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
 namespace AuctionTigerScraper
 {
     public class Vehicle
@@ -14,7 +17,8 @@ namespace AuctionTigerScraper
         public string Remarks { get; set; }
         public string Reference { get; set; }
         internal Auction Auction { get; set; }
-        public string PicturesPath { get; set; }
+        internal string PicturesLink { get; set; }
+        internal IEnumerable<string> Pictures { get; set; }
 
         public Vehicle(Guid id, Auction auction, string carname, string number, string fuel, string year, string address,  string status="", string remarks="", string reference="")
         {
@@ -30,6 +34,17 @@ namespace AuctionTigerScraper
             OwnershipStatus = _status;
             Remarks = remarks;
             Reference = reference;
+        }
+        public string GetPictureAsync(int id)
+        {
+            try
+            {
+                return Pictures.ElementAt(id);
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

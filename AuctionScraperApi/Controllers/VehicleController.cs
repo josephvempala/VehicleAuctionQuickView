@@ -37,7 +37,7 @@ namespace AuctionScraperApi.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Vehicle>> Get(Guid id)
         {
-            var vehicles = await _auctionScraper.GetVehicles();
+            var vehicles = _auctionScraper.Vehicles;
             var vehicle = vehicles.Where(vehicle => vehicle.Id == id).FirstOrDefault();
             if (vehicle is null)
                 return NotFound();
@@ -47,8 +47,8 @@ namespace AuctionScraperApi.Controllers
         [HttpPost]
         public async Task<ActionResult<IEnumerable<Vehicle>>> Get(IEnumerable<string> vehicle_names)
         {
-            var vehicles = await _auctionScraper.GetDesirableVehiclesAsync(vehicle_names);
-            if (vehicles.Count == 0)
+            IEnumerable<Vehicle> vehicles = await _auctionScraper.GetDesirableVehiclesAsync(vehicle_names);
+            if (vehicles.Count() == 0)
                 return NotFound();
             return Ok(vehicles);
         }

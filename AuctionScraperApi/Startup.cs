@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -32,7 +33,7 @@ namespace AuctionScraperApi
             var Precaching = Configuration.GetSection(nameof(ScraperPrecaching)).Get<ScraperPrecaching>();
             services.AddSingleton(provider => {
                 AuctionScraper auctionScraper = new AuctionScraper();
-                auctionScraper.InitializeScraperAsync(loginDetails.Username, loginDetails.Password).Wait();
+                auctionScraper.InitializeScraperAsync(new ScraperOptions { Username = loginDetails.Username, Password = loginDetails.Password, DesirableVehicles = Precaching.DesirableVehicles }).Wait();
                 return auctionScraper;
             });
             services.AddControllers();

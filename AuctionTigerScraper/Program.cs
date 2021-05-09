@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.IO;
 using System;
+using System.IO.Compression;
 
 namespace AuctionTigerScraper
 {
@@ -15,6 +16,47 @@ namespace AuctionTigerScraper
         private Browser browser;
         private Page page;
         public List<Auction> Auctions = new();
+        public List<Vehicle> Vehicles;
+        public IEnumerable<string> DesirableVehicleNames { get; private set; }
+
+        private async Task<IEnumerable<Vehicle>> GetVehicles()
+        {
+            List<Vehicle> Vehicles = new();
+            await Task.Run(() =>
+            {
+                if (Auctions is null)
+                {
+                    return;
+                }
+                List<Auction> ToBeRemoved = new();
+                foreach (Auction Auction in Auctions)
+                {
+                    MatchCollection matches = null;
+                    Auction.Vehicles = new List<Vehicle>();
+                    matches = Regex.Matches(Regex.Replace(Auction.Description, @"\n", " "), @"(?>(?<AucName>.+?)?(?>[\(]?(\d{1,2})[\)]?) ?(?<CarName>.+?)(?<Number>(?>[A-Z]{2}[- ]*?[A-Z\d]{1,2}[- ]*?[A-Z\d]{1,2}[- ]*?[\d]{4} ))(?<Fuel>(?>Diesel|Petrol|CNG|0)).*?(?<Year>\d{4}) (?<Address>.+?)(?:(?>Ownership( status)?)) ?(?<Status>(?>\d))? ?(?:(?>Remark))?(?<Remarks>.+?)?(?<Reference>(?>MOT\d{8})))", RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture, TimeSpan.FromMilliseconds(1000));
+                    try
+                    {
+                        foreach (Match match in matches)
+                        {
+                            if (match.Groups["AucName"].Success is true && match.Groups["AucName"].Value is not " ")
+                            {
+                                Auction.Name = match.Groups["AucName"].Value;
+                            }
+                            var vehicle = new Vehicle(Guid.NewGuid(), Auction, match.Groups["CarName"].Value, match.Groups["Number"].Value, match.Groups["Fuel"].Value, match.Groups["Year"].Value, match.Groups["Address"].Value, match.Groups["Status"].Value, match.Groups["Remarks"].Value, match.Groups["Reference"].Value);
+                            Auction.Vehicles.Add(vehicle);
+                            Vehicles.Add(vehicle);
+                        }
+                    }
+                    catch
+                    {
+                        ToBeRemoved.Add(Auction);
+                        continue;
+                    }
+                }
+                ToBeRemoved.ForEach(item => { Auctions.Remove(item); });
+            });
+            return Vehicles;
+        }
         private async Task LoginAsync(string username, string password)
         {
             await page.EvaluateExpressionAsync("loginWindow();");
@@ -53,78 +95,17 @@ namespace AuctionTigerScraper
             auction.DocumentData = await page.EvaluateExpressionAsync<DocumentData[]>("Array.from(Array.from(document.querySelectorAll('.table-border'))[1].querySelectorAll('tr')).slice(2).map((i)=>{return{DocName:i.outerText,DownloadLink:i.lastElementChild.firstElementChild.href.slice(37)}});");
             await page.CloseAsync();
         }
-        private async Task<string> DownloadPictures(Vehicle vehicle, string downloadLocation)
-        {
-            Page temp = await browser.NewPageAsync();
-            DownloadManager downloadManager = new(downloadLocation);
-            await temp.GoToAsync(vehicle.Auction.Link);
-            if (vehicle.Auction.DocumentData is null)
-            {
-                return string.Empty;
-            }
-            foreach (DocumentData document in vehicle.Auction.DocumentData)
-            {
-                var match = Regex.Match(document.DocName, @$"{vehicle.Reference}|{vehicle.RegistrationNumber.State}[- ]*?{vehicle.RegistrationNumber.RTO}[- ]*?{vehicle.RegistrationNumber.Series}[- ]*?{vehicle.RegistrationNumber.Number}|{vehicle.Name}");
-                if (match.Success)
-                {
-                    await downloadManager.SetupPageAsync(temp);
-                    string download = await downloadManager.WaitForDownload(temp, document.DownloadLink);
-                    vehicle.PicturesPath = download;
-                    await temp.CloseAsync();
-                    return download;
-                }
-            }
-            return string.Empty;
-        }
         private async Task StartWatchchingForAuctions(Page page)
         {
             while(true)
             {
-                await CheckForChanges();
+                await CheckForChangesAsync();
                 await Task.Delay(new TimeSpan(0, 20, 0));
             }
         }
         #endregion
         #region public
-        public async Task<List<Vehicle>> GetVehicles()
-        {
-            List<Vehicle> Vehicles = new();
-            await Task.Run(() =>
-            {
-                if (Auctions is null)
-                {
-                    return;
-                }
-                List<Auction> ToBeRemoved = new();
-                foreach (Auction Auction in Auctions)
-                {
-                    MatchCollection matches = null;
-                    Auction.Vehicles = new List<Vehicle>();
-                    matches = Regex.Matches(Regex.Replace(Auction.Description, @"\n", " "), @"(?>(?<AucName>.+?)?(?>[\(]?(\d{1,2})[\)]?) ?(?<CarName>.+?)(?<Number>(?>[A-Z]{2}[- ]*?[A-Z\d]{1,2}[- ]*?[A-Z\d]{1,2}[- ]*?[\d]{4} ))(?<Fuel>(?>Diesel|Petrol|CNG|0)).*?(?<Year>\d{4}) (?<Address>.+?)(?:(?>Ownership( status)?)) ?(?<Status>(?>\d))? ?(?:(?>Remark))?(?<Remarks>.+?)?(?<Reference>(?>MOT\d{8})))", RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture, TimeSpan.FromMilliseconds(1000));
-                    try
-                    {
-                        foreach (Match match in matches)
-                        {
-                            if (match.Groups["AucName"].Success is true && match.Groups["AucName"].Value is not " ")
-                            {
-                                Auction.Name = match.Groups["AucName"].Value;
-                            }
-                            var vehicle = new Vehicle(Guid.NewGuid(), Auction, match.Groups["CarName"].Value, match.Groups["Number"].Value, match.Groups["Fuel"].Value, match.Groups["Year"].Value, match.Groups["Address"].Value, match.Groups["Status"].Value, match.Groups["Remarks"].Value, match.Groups["Reference"].Value);
-                            Auction.Vehicles.Add(vehicle);
-                            Vehicles.Add(vehicle);
-                        }
-                    }
-                    catch
-                    {
-                        ToBeRemoved.Add(Auction);
-                        continue;
-                    }
-                }
-                ToBeRemoved.ForEach(item => { Auctions.Remove(item); });
-            });
-            return Vehicles;
-        }
-        public async Task CheckForChanges()
+        public async Task CheckForChangesAsync()
         {
             bool isNew=false;
             if (currentlyChecking)
@@ -151,13 +132,27 @@ namespace AuctionTigerScraper
                     Auctions[i] = newAuctions[i];
                 }
             }
-            if(isNew)
+            if (isNew)
             {
-                await Task.WhenAll(Task.WhenAll(temp), GetVehicles());
+                await Task.WhenAll(Task.WhenAll(temp));
+                List<Vehicle> vehicles = (List<Vehicle>)await GetVehicles();
+                foreach (var vehicle in vehicles)
+                {
+                    foreach (DocumentData document in vehicle.Auction.DocumentData)
+                    {
+                        var match = Regex.Match(document.DocName, @$"{vehicle.Reference}|{vehicle.RegistrationNumber.State}[- ]*?{vehicle.RegistrationNumber.RTO}[- ]*?{vehicle.RegistrationNumber.Series}[- ]*?{vehicle.RegistrationNumber.Number}|{vehicle.Name}");
+                        if (match.Success)
+                        {
+                            vehicle.PicturesLink = document.DownloadLink;
+                        }
+                    }
+                }
+                Vehicles = vehicles;
+                await DownloadPicturesAsync(await GetDesirableVehiclesAsync(DesirableVehicleNames));
             }
             currentlyChecking = false;
         }
-        public async Task InitializeScraperAsync(string username, string password)
+        public async Task InitializeScraperAsync(ScraperOptions scraperOptions)
         {
             await new BrowserFetcher().DownloadAsync(BrowserFetcher.DefaultRevision);
             browser = await Puppeteer.LaunchAsync(new LaunchOptions
@@ -166,13 +161,33 @@ namespace AuctionTigerScraper
             });
             page = await browser.NewPageAsync();
             await page.GoToAsync("https://icicilombard.procuretiger.com/");
-            await LoginAsync(username, password);
-            await CheckForChanges();
+            await LoginAsync(scraperOptions.Username, scraperOptions.Password);
+            DesirableVehicleNames = scraperOptions.DesirableVehicles;
+            await CheckForChangesAsync();
             StartWatchchingForAuctions(page);
         }
-        public async Task<List<Vehicle>> GetDesirableVehiclesAsync(IEnumerable<string> DesirableVehicleNames)
+        public async Task DownloadPicturesAsync(IEnumerable<Vehicle> vehicles)
         {
-            List<Vehicle> Vehicles = await GetVehicles(); 
+            Page page = await browser.NewPageAsync();
+            await page.GoToAsync("https://icicilombard.procuretiger.com/");
+            foreach (var vehicle in vehicles)
+            {
+                DownloadManager downloadManager = new(Path.GetTempPath());
+                if (vehicle.PicturesLink is null or "")
+                {
+                    continue;
+                }
+                await downloadManager.SetupPageAsync(page);
+                await page.EvaluateExpressionAsync($"var butn = document.createElement('A'); butn.href = '{vehicle.PicturesLink}'; butn.text='test'; document.body.appendChild(butn);");
+                string download = await downloadManager.WaitForDownload(page, vehicle.PicturesLink);
+                string downloadsPath = Path.Combine(Path.GetTempPath(), vehicle.Id.ToString());
+                ZipFile.ExtractToDirectory(download, downloadsPath);
+                vehicle.Pictures = Directory.EnumerateFiles(downloadsPath, "*.*", SearchOption.AllDirectories);
+            }
+            await page.CloseAsync();
+        }
+        public async Task<IEnumerable<Vehicle>> GetDesirableVehiclesAsync(IEnumerable<string> DesirableVehicleNames)
+        {
             List<Vehicle> desirablevehicles = new List<Vehicle>();
             await Task.Run(() => { 
                 foreach (Vehicle vehicle in Vehicles)
