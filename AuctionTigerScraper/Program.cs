@@ -1,11 +1,10 @@
 ﻿using PuppeteerSharp;
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Linq;
-using System.IO;
-using System;
-using System.IO.Compression;
 
 namespace AuctionTigerScraper
 {
@@ -42,7 +41,7 @@ namespace AuctionTigerScraper
                             {
                                 Auction.Name = match.Groups["AucName"].Value;
                             }
-                            var vehicle = new Vehicle(Guid.NewGuid(), Auction, match.Groups["CarName"].Value, match.Groups["Number"].Value, match.Groups["Fuel"].Value, match.Groups["Year"].Value, match.Groups["Address"].Value, match.Groups["Status"].Value, match.Groups["Remarks"].Value, match.Groups["Reference"].Value);
+                            Vehicle vehicle = new Vehicle(Guid.NewGuid(), Auction, match.Groups["CarName"].Value, match.Groups["Number"].Value, match.Groups["Fuel"].Value, match.Groups["Year"].Value, match.Groups["Address"].Value, match.Groups["Status"].Value, match.Groups["Remarks"].Value, match.Groups["Reference"].Value);
                             Auction.Vehicles.Add(vehicle);
                             Vehicles.Add(vehicle);
                         }
@@ -67,13 +66,13 @@ namespace AuctionTigerScraper
         private async Task<List<Auction>> GetAuctionsInfoAsync()
         {
             await page.WaitForSelectorAsync(".details-box");
-            var auctions = await page.EvaluateExpressionAsync<List<Auction>>(@"Array.from(document.getElementsByClassName('details-box')).map(box=>{return{Link:box.firstElementChild.firstElementChild.href,Description:box.firstElementChild.firstElementChild.text}});");
+            List<Auction> auctions = await page.EvaluateExpressionAsync<List<Auction>>(@"Array.from(document.getElementsByClassName('details-box')).map(box=>{return{Link:box.firstElementChild.firstElementChild.href,Description:box.firstElementChild.firstElementChild.text}});");
             return auctions;
         }
         private async Task GetAllAuctionDocuments(IEnumerable<Auction> auctions)
         {
             List<Task> documentTasks = new List<Task>();
-            foreach(var Auction in auctions)
+            foreach (Auction Auction in auctions)
             {
                 documentTasks.Add(GetDocuments(Auction));
             }
@@ -81,7 +80,7 @@ namespace AuctionTigerScraper
         }
         private async Task GetDocuments(Auction auction)
         {
-            var page = await browser.NewPageAsync();
+            Page page = await browser.NewPageAsync();
             await page.GoToAsync(auction.Link);
             try
             {
@@ -97,7 +96,7 @@ namespace AuctionTigerScraper
         }
         private async Task StartWatchchingForAuctions(Page page)
         {
-            while(true)
+            while (true)
             {
                 await CheckForChangesAsync();
                 await Task.Delay(new TimeSpan(0, 20, 0));
@@ -107,25 +106,25 @@ namespace AuctionTigerScraper
         #region public
         public async Task CheckForChangesAsync()
         {
-            bool isNew=false;
+            bool isNew = false;
             if (currentlyChecking)
                 return;
             currentlyChecking = true;
             await page.ReloadAsync();
-            var newAuctions = await GetAuctionsInfoAsync();
-            if(newAuctions.Count != Auctions.Count)
+            List<Auction> newAuctions = await GetAuctionsInfoAsync();
+            if (newAuctions.Count != Auctions.Count)
             {
                 isNew = true;
                 newAuctions.RemoveAll(item => Auctions.Contains(item));
-                if(newAuctions.Count>0)
+                if (newAuctions.Count > 0)
                     await GetAllAuctionDocuments(newAuctions);
                 Auctions.AddRange(newAuctions);
             }
             List<Task> temp = new();
             Auction tempAuction = new();
-            for(int i = 0; i < newAuctions.Count; i++)
+            for (int i = 0; i < newAuctions.Count; i++)
             {
-                if(!newAuctions[i].Equals(Auctions[i]))
+                if (!newAuctions[i].Equals(Auctions[i]))
                 {
                     isNew = true;
                     temp.Add(GetDocuments(newAuctions[i]));
@@ -136,11 +135,11 @@ namespace AuctionTigerScraper
             {
                 await Task.WhenAll(Task.WhenAll(temp));
                 List<Vehicle> vehicles = (List<Vehicle>)await GetVehicles();
-                foreach (var vehicle in vehicles)
+                foreach (Vehicle vehicle in vehicles)
                 {
                     foreach (DocumentData document in vehicle.Auction.DocumentData)
                     {
-                        var match = Regex.Match(document.DocName, @$"{vehicle.Reference}|{vehicle.RegistrationNumber.State}[- ]*?{vehicle.RegistrationNumber.RTO}[- ]*?{vehicle.RegistrationNumber.Series}[- ]*?{vehicle.RegistrationNumber.Number}|{vehicle.Name}");
+                        Match match = Regex.Match(document.DocName, @$"{vehicle.Reference}|{vehicle.RegistrationNumber.State}[- ]*?{vehicle.RegistrationNumber.RTO}[- ]*?{vehicle.RegistrationNumber.Series}[- ]*?{vehicle.RegistrationNumber.Number}|{vehicle.Name}");
                         if (match.Success)
                         {
                             vehicle.PicturesLink = document.DownloadLink;
@@ -170,7 +169,7 @@ namespace AuctionTigerScraper
         {
             Page page = await browser.NewPageAsync();
             await page.GoToAsync("https://icicilombard.procuretiger.com/");
-            foreach (var vehicle in vehicles)
+            foreach (Vehicle vehicle in vehicles)
             {
                 DownloadManager downloadManager = new(Path.GetTempPath());
                 if (vehicle.PicturesLink is null or "")
@@ -189,7 +188,8 @@ namespace AuctionTigerScraper
         public async Task<IEnumerable<Vehicle>> GetDesirableVehiclesAsync(IEnumerable<string> DesirableVehicleNames)
         {
             List<Vehicle> desirablevehicles = new List<Vehicle>();
-            await Task.Run(() => { 
+            await Task.Run(() =>
+            {
                 foreach (Vehicle vehicle in Vehicles)
                 {
                     foreach (string car in DesirableVehicleNames)

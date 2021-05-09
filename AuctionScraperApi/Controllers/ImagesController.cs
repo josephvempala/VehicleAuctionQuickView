@@ -1,11 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using AuctionTigerScraper;
-using System.IO;
+﻿using AuctionTigerScraper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
+using System;
+using System.Threading.Tasks;
 
 namespace AuctionScraperApi.Controllers
 {
@@ -31,16 +28,16 @@ namespace AuctionScraperApi.Controllers
             {
                 return NotFound();
             }
-            if(Picture is null)
+            if (Picture is null)
             {
                 return NotFound();
             }
-            var provider = new FileExtensionContentTypeProvider();
-            if(!provider.TryGetContentType(Picture, out string contentType))
+            FileExtensionContentTypeProvider provider = new FileExtensionContentTypeProvider();
+            if (!provider.TryGetContentType(Picture, out string contentType))
             {
                 contentType = "application/octet-stream";
             }
-            var bytes = await System.IO.File.ReadAllBytesAsync(Picture);
+            byte[] bytes = await System.IO.File.ReadAllBytesAsync(Picture);
             return File(bytes, contentType, id.ToString());
         }
     }

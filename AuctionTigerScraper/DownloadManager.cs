@@ -1,6 +1,6 @@
-﻿using System.IO;
+﻿using PuppeteerSharp;
+using System.IO;
 using System.Threading.Tasks;
-using PuppeteerSharp;
 namespace AuctionTigerScraper
 {
     public class DownloadManager
@@ -20,7 +20,7 @@ namespace AuctionTigerScraper
         }
         public void CleanDownloadDirectory()
         {
-            foreach (var file in Directory.EnumerateFiles(_downloadDirectory))
+            foreach (string file in Directory.EnumerateFiles(_downloadDirectory))
             {
                 File.Delete(file);
             }
@@ -29,16 +29,16 @@ namespace AuctionTigerScraper
         {
             Task<Response> response = GetResponseWithFile(page);
             await page.ClickAsync($"a[href='{downloadLink}']");
-            var responseData = await response;
-            var contentDisposition = responseData.Headers["Content-Disposition"];
-            var fileName = contentDisposition.Split(";")[1].Split("=")[1].Trim('\"');
-            var filePath = Path.Combine(_downloadDirectory, fileName);
+            Response responseData = await response;
+            string contentDisposition = responseData.Headers["Content-Disposition"];
+            string fileName = contentDisposition.Split(";")[1].Split("=")[1].Trim('\"');
+            string filePath = Path.Combine(_downloadDirectory, fileName);
             await WaitForFile(filePath);
             return filePath;
         }
         private static async Task<Response> GetResponseWithFile(Page page)
         {
-            var response = await page.WaitForResponseAsync(r => r.Headers.ContainsKey("Content-Disposition"),
+            Response response = await page.WaitForResponseAsync(r => r.Headers.ContainsKey("Content-Disposition"),
                 new WaitForOptions
                 {
                     Timeout = 10000

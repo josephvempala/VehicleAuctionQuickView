@@ -23,8 +23,8 @@ namespace AuctionScraperApi.Controllers
         public ActionResult<IEnumerable<Vehicle>> GetAll()
         {
             List<Vehicle> vehicles = new List<Vehicle>();
-            foreach(var auction in _auctionScraper.Auctions)
-                foreach(var vehicle in auction.Vehicles)
+            foreach (Auction auction in _auctionScraper.Auctions)
+                foreach (Vehicle vehicle in auction.Vehicles)
                 {
                     vehicles.Add(vehicle);
                 }
@@ -37,8 +37,8 @@ namespace AuctionScraperApi.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Vehicle>> Get(Guid id)
         {
-            var vehicles = _auctionScraper.Vehicles;
-            var vehicle = vehicles.Where(vehicle => vehicle.Id == id).FirstOrDefault();
+            List<Vehicle> vehicles = _auctionScraper.Vehicles;
+            Vehicle vehicle = vehicles.Where(vehicle => vehicle.Id == id).FirstOrDefault();
             if (vehicle is null)
                 return NotFound();
             return Ok(vehicle);
