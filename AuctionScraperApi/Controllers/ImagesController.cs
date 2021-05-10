@@ -19,18 +19,14 @@ namespace AuctionScraperApi.Controllers
         [HttpGet("{vehicleId}/{id}")]
         public async Task<IActionResult> GetImage(Guid vehicleId, int id)
         {
-            string Picture;
-            try
+            var vehicle = _auctionscraper.Vehicles.Find(x => x.Id == vehicleId);
+            var Picture = vehicle.GetPicture(id);
+            if(Picture is null)
             {
-                Picture = _auctionscraper.Vehicles.Find(item => item.Id == vehicleId).GetPictureAsync(id);
-            }
-            catch
-            {
-                return NotFound();
-            }
-            if (Picture is null)
-            {
-                return NotFound();
+                await _auctionscraper.DownloadPicturesAsync(new Vehicle[] { vehicle });
+                if (vehicle.GetPicture(id) is null)
+                    return NotFound();
+                Picture = vehicle.GetPicture(id);
             }
             FileExtensionContentTypeProvider provider = new FileExtensionContentTypeProvider();
             if (!provider.TryGetContentType(Picture, out string contentType))

@@ -20,14 +20,17 @@ namespace AuctionScraperApi.Controllers
         }
         // GET: api/<ValuesController>
         [HttpGet]
-        public ActionResult<IEnumerable<Vehicle>> GetAll()
+        public ActionResult<IEnumerable<Vehicle>> GetAll(int index, int limit)
         {
-            List<Vehicle> vehicles = new List<Vehicle>();
-            foreach (Auction auction in _auctionScraper.Auctions)
-                foreach (Vehicle vehicle in auction.Vehicles)
-                {
-                    vehicles.Add(vehicle);
-                }
+            List<Vehicle> vehicles;
+            try
+            {
+                 vehicles = _auctionScraper.Vehicles.GetRange(index, limit);
+            }
+            catch
+            {
+                return BadRequest("invalid index and or limit");
+            }
             if (vehicles.Count == 0)
                 return NotFound();
             return Ok(vehicles);
@@ -38,7 +41,7 @@ namespace AuctionScraperApi.Controllers
         public async Task<ActionResult<Vehicle>> Get(Guid id)
         {
             List<Vehicle> vehicles = _auctionScraper.Vehicles;
-            Vehicle vehicle = vehicles.Where(vehicle => vehicle.Id == id).FirstOrDefault();
+            Vehicle vehicle = vehicles.Where(vehicle => vehicle.Id == id).First();
             if (vehicle is null)
                 return NotFound();
             return Ok(vehicle);
@@ -48,7 +51,7 @@ namespace AuctionScraperApi.Controllers
         public async Task<ActionResult<IEnumerable<Vehicle>>> Get(IEnumerable<string> vehicle_names)
         {
             IEnumerable<Vehicle> vehicles = await _auctionScraper.GetDesirableVehiclesAsync(vehicle_names);
-            if (vehicles.Count() == 0)
+            if (vehicles.Count() == 0 || vehicles is null)
                 return NotFound();
             return Ok(vehicles);
         }

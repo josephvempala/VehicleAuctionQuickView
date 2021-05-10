@@ -45,7 +45,9 @@ namespace AuctionScraperApi
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "AuctionScraperApi v1"));
             }
-
+            app.UseCors(options => options.AllowAnyOrigin());
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
             app.UseHttpsRedirection();
 
             app.UseRouting();

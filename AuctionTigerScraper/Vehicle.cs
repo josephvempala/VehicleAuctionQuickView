@@ -34,7 +34,7 @@ namespace AuctionTigerScraper
             Remarks = remarks;
             Reference = reference;
         }
-        public string GetPictureAsync(int id)
+        public string GetPicture(int id)
         {
             try
             {

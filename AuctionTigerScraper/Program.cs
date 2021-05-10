@@ -139,7 +139,15 @@ namespace AuctionTigerScraper
                 {
                     foreach (DocumentData document in vehicle.Auction.DocumentData)
                     {
-                        Match match = Regex.Match(document.DocName, @$"{vehicle.Reference}|{vehicle.RegistrationNumber.State}[- ]*?{vehicle.RegistrationNumber.RTO}[- ]*?{vehicle.RegistrationNumber.Series}[- ]*?{vehicle.RegistrationNumber.Number}|{vehicle.Name}");
+                        Match match = null;
+                        try
+                        {
+                             match = Regex.Match(document.DocName, @$"{vehicle.Reference}|{vehicle.RegistrationNumber.State}[- ]*?{vehicle.RegistrationNumber.RTO}[- ]*?{vehicle.RegistrationNumber.Series}[- ]*?{vehicle.RegistrationNumber.Number}|{vehicle.Name}");
+                        }
+                        catch
+                        {
+                            continue;
+                        }
                         if (match.Success)
                         {
                             vehicle.PicturesLink = document.DownloadLink;
@@ -147,7 +155,7 @@ namespace AuctionTigerScraper
                     }
                 }
                 Vehicles = vehicles;
-                await DownloadPicturesAsync(await GetDesirableVehiclesAsync(DesirableVehicleNames));
+                //await DownloadPicturesAsync(await GetDesirableVehiclesAsync(DesirableVehicleNames));
             }
             currentlyChecking = false;
         }
@@ -171,11 +179,11 @@ namespace AuctionTigerScraper
             await page.GoToAsync("https://icicilombard.procuretiger.com/");
             foreach (Vehicle vehicle in vehicles)
             {
-                DownloadManager downloadManager = new(Path.GetTempPath());
-                if (vehicle.PicturesLink is null or "")
+                if (vehicle.PicturesLink is null or "" || vehicle.Pictures is not null)
                 {
                     continue;
                 }
+                DownloadManager downloadManager = new(Path.GetTempPath());
                 await downloadManager.SetupPageAsync(page);
                 await page.EvaluateExpressionAsync($"var butn = document.createElement('A'); butn.href = '{vehicle.PicturesLink}'; butn.text='test'; document.body.appendChild(butn);");
                 string download = await downloadManager.WaitForDownload(page, vehicle.PicturesLink);
