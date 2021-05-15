@@ -15,6 +15,7 @@ namespace AuctionTigerScraper
         public int OwnershipStatus { get; set; }
         public string Remarks { get; set; }
         public string Reference { get; set; }
+        public int ImagesCount { get; set; }
         internal Auction Auction { get; set; }
         internal string PicturesLink { get; set; }
         internal IEnumerable<string> Pictures { get; set; }

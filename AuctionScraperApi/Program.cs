@@ -15,6 +15,7 @@ namespace AuctionScraperApi
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
+                    webBuilder.UseUrls("http://192.168.0.61:5001", "http://192.168.192.179:5001");
                 });
     }
 }

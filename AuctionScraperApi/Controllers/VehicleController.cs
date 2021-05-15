@@ -22,28 +22,21 @@ namespace AuctionScraperApi.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<Vehicle>> GetAll(int index, int limit)
         {
-            List<Vehicle> vehicles;
-            try
-            {
-                 vehicles = _auctionScraper.Vehicles.GetRange(index, limit);
-            }
-            catch
-            {
-                return BadRequest("invalid index and or limit");
-            }
-            if (vehicles.Count == 0)
-                return NotFound();
-            return Ok(vehicles);
+            if (index < 0 || index > _auctionScraper.Vehicles.Count)
+                return BadRequest();
+            if(index+limit > _auctionScraper.Vehicles.Count)
+                return Ok(_auctionScraper.Vehicles.GetRange(index, _auctionScraper.Vehicles.Count - index).Select(item => new { item.Id, item.Name, item.Year, item.Fuel, item.RegistrationNumber } ));
+            return Ok(_auctionScraper.Vehicles.GetRange(index, limit).Select(item => new { item.Id, item.Name, item.Year, item.Fuel, item.RegistrationNumber }));
         }
 
         // GET api/<ValuesController>/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Vehicle>> Get(Guid id)
         {
-            List<Vehicle> vehicles = _auctionScraper.Vehicles;
-            Vehicle vehicle = vehicles.Where(vehicle => vehicle.Id == id).First();
+            Vehicle vehicle = _auctionScraper.Vehicles.Where(vehicle => vehicle.Id == id).First();
             if (vehicle is null)
                 return NotFound();
+            await _auctionScraper.DownloadPicturesAsync(new Vehicle[] { vehicle });
             return Ok(vehicle);
         }
 

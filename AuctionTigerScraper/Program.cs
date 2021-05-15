@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -164,7 +165,7 @@ namespace AuctionTigerScraper
             await new BrowserFetcher().DownloadAsync(BrowserFetcher.DefaultRevision);
             browser = await Puppeteer.LaunchAsync(new LaunchOptions
             {
-                Headless = false
+                Headless = true
             });
             page = await browser.NewPageAsync();
             await page.GoToAsync("https://icicilombard.procuretiger.com/");
@@ -190,6 +191,7 @@ namespace AuctionTigerScraper
                 string downloadsPath = Path.Combine(Path.GetTempPath(), vehicle.Id.ToString());
                 ZipFile.ExtractToDirectory(download, downloadsPath);
                 vehicle.Pictures = Directory.EnumerateFiles(downloadsPath, "*.*", SearchOption.AllDirectories);
+                vehicle.ImagesCount = vehicle.Pictures.Count();
             }
             await page.CloseAsync();
         }
