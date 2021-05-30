@@ -6,10 +6,12 @@ namespace AuctionTigerScraper
     public class DownloadManager
     {
         private readonly string _downloadDirectory;
+
         public DownloadManager(string downloadDirectory)
         {
             _downloadDirectory = downloadDirectory;
         }
+
         public async Task SetupPageAsync(Page page)
         {
             await page.Client.SendAsync("Page.setDownloadBehavior", new
@@ -18,6 +20,7 @@ namespace AuctionTigerScraper
                 downloadPath = _downloadDirectory,
             });
         }
+
         public void CleanDownloadDirectory()
         {
             foreach (string file in Directory.EnumerateFiles(_downloadDirectory))
@@ -25,6 +28,7 @@ namespace AuctionTigerScraper
                 File.Delete(file);
             }
         }
+
         public async Task<string> WaitForDownload(Page page, string downloadLink)
         {
             Task<Response> response = GetResponseWithFile(page);
@@ -36,6 +40,7 @@ namespace AuctionTigerScraper
             await WaitForFile(filePath);
             return filePath;
         }
+
         private static async Task<Response> GetResponseWithFile(Page page)
         {
             Response response = await page.WaitForResponseAsync(r => r.Headers.ContainsKey("Content-Disposition"),
@@ -45,6 +50,7 @@ namespace AuctionTigerScraper
                 });
             return response;
         }
+
         private static async ValueTask WaitForFile(string filePath)
         {
             while (!File.Exists(filePath))

@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
+﻿
 namespace AuctionTigerScraper
 {
     public class Vehicle
     {
-        public Guid Id { get; set; }
         public string Name { get; set; }
         public int Year { get; set; }
         public Registration RegistrationNumber { get; set; }
@@ -15,14 +11,13 @@ namespace AuctionTigerScraper
         public int OwnershipStatus { get; set; }
         public string Remarks { get; set; }
         public string Reference { get; set; }
-        public int ImagesCount { get; set; }
+        public string PicturesDirectory { get; set; }
+        public int PicturesCount { get; set; }
         internal Auction Auction { get; set; }
         internal string PicturesLink { get; set; }
-        internal IEnumerable<string> Pictures { get; set; }
 
-        public Vehicle(Guid id, Auction auction, string carname, string number, string fuel, string year, string address, string status = "", string remarks = "", string reference = "")
+        public Vehicle(Auction auction, string carname, string number, string fuel, string year, string address, string status = "", string remarks = "", string reference = "")
         {
-            Id = id;
             Auction = auction;
             Name = carname;
             RegistrationNumber = new Registration(number);
@@ -34,17 +29,6 @@ namespace AuctionTigerScraper
             OwnershipStatus = _status;
             Remarks = remarks;
             Reference = reference;
-        }
-        public string GetPicture(int id)
-        {
-            try
-            {
-                return Pictures.ElementAt(id);
-            }
-            catch
-            {
-                return null;
-            }
         }
     }
 }

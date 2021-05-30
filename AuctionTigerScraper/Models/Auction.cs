@@ -19,7 +19,7 @@ namespace AuctionTigerScraper
 
         public override int GetHashCode()
         {
-            throw new NotImplementedException();
+            return Description.GetHashCode();
         }
     }
 }
