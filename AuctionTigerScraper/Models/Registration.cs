@@ -2,7 +2,7 @@
 
 namespace AuctionTigerScraper
 {
-    public class Registration
+    public struct Registration
     {
         public string State { get; set; }
         public string RTO { get; set; }

@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "AuctionTigerScraper": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}

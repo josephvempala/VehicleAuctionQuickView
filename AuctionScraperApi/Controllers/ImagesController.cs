@@ -10,8 +10,8 @@ namespace AuctionScraperApi.Controllers
     [ApiController]
     public class ImagesController : ControllerBase
     {
-        private readonly AuctionScraper _auctionscraper;
-        public ImagesController(AuctionScraper auctionScraper)
+        private readonly AuctionTigerScraper.AuctionTigerScraper _auctionscraper;
+        public ImagesController(AuctionTigerScraper.AuctionTigerScraper auctionScraper)
         {
             _auctionscraper = auctionScraper;
         }

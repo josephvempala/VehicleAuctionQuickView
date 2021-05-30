@@ -13,8 +13,8 @@ namespace AuctionScraperApi.Controllers
     [ApiController]
     public class VehicleController : ControllerBase
     {
-        private readonly AuctionScraper _auctionScraper;
-        public VehicleController(AuctionScraper auctionScraper)
+        private readonly AuctionTigerScraper.AuctionTigerScraper _auctionScraper;
+        public VehicleController(AuctionTigerScraper.AuctionTigerScraper auctionScraper)
         {
             _auctionScraper = auctionScraper;
         }

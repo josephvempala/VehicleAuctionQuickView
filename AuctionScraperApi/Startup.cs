@@ -25,7 +25,7 @@ namespace AuctionScraperApi
             ScraperPrecaching Precaching = Configuration.GetSection(nameof(ScraperPrecaching)).Get<ScraperPrecaching>();
             services.AddSingleton(provider =>
             {
-                AuctionScraper auctionScraper = new AuctionScraper();
+                AuctionTigerScraper.AuctionTigerScraper auctionScraper = new AuctionTigerScraper.AuctionTigerScraper();
                 auctionScraper.InitializeScraperAsync(new ScraperOptions { Username = loginDetails.Username, Password = loginDetails.Password, DesirableVehicles = Precaching.DesirableVehicles }).Wait();
                 return auctionScraper;
             });
