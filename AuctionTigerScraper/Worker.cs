@@ -90,8 +90,8 @@ namespace AuctionTigerScraper
             {
                 try
                 {
-                    _logger.LogInformation(DateTime.Now.ToString() + " Checked for changes");
                     await _scraper.CheckForChangesAsync(stoppingToken);
+                    _logger.LogInformation(DateTime.Now.ToString() + " Checked for changes");
                 }
                 catch (Exception e)
                 {
@@ -99,7 +99,7 @@ namespace AuctionTigerScraper
                 }
                 finally
                 {
-                    await Task.Delay(TimeSpan.FromMinutes(double.Parse(_configuration.GetSection("RecheckFrequency").Value)));
+                    await Task.Delay(TimeSpan.FromMinutes(double.Parse(_configuration.GetSection("RecheckFrequency").Value)), stoppingToken);
                 }
             }
         }

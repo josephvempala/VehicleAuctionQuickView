@@ -49,12 +49,16 @@ namespace AuctionTigerScraper
             return Vehicles;
         }
 
-        private async Task LoginAsync(string username, string password)
+        private async Task LoginAsync(string username, string password, CancellationToken? cancellationToken = null)
         {
             await page.EvaluateExpressionAsync("loginWindow();");
             await page.TypeAsync("#j_username", username);
             await page.TypeAsync("#j_password", password);
             await page.ClickAsync("button.pull-left.blue-button-small");
+            if (cancellationToken?.IsCancellationRequested ?? false)
+            {
+                return;
+            }
         }
 
         private async Task<List<Auction>> GetAuctionsInfoAsync()
@@ -71,11 +75,15 @@ namespace AuctionTigerScraper
             return auctions;
         }
 
-        private async Task GetAllAuctionDocuments(IEnumerable<Auction> auctions)
+        private async Task GetAllAuctionDocuments(IEnumerable<Auction> auctions, CancellationToken? cancellationToken = null)
         {
             List<Task> documentTasks = new List<Task>();
             foreach (Auction Auction in auctions)
             {
+                if (cancellationToken?.IsCancellationRequested ?? false)
+                {
+                    return;
+                }
                 documentTasks.Add(GetDocuments(Auction, auctions));
             }
             await Task.WhenAll(documentTasks);
@@ -100,14 +108,19 @@ namespace AuctionTigerScraper
             }
         }
 
-        private async Task DownloadPicturesAsync(IEnumerable<Vehicle> vehicles)
+        private async Task DownloadPicturesAsync(IEnumerable<Vehicle> vehicles, CancellationToken? cancellationToken = null)
         {
             using (Page page = await browser.NewPageAsync())
             {
+                string download;
                 await page.GoToAsync("https://icicilombard.procuretiger.com/");
                 foreach (Vehicle vehicle in vehicles)
                 {
-                    string downloadsPath = Path.Combine(Path.GetTempPath(), vehicle.RegistrationNumber.ToString());
+                    if (cancellationToken?.IsCancellationRequested ?? false)
+                    {
+                        break;
+                    }
+                    string downloadsPath = Path.Combine(Path.GetTempPath(), "VehicleImages", vehicle.RegistrationNumber.ToString());
                     if (vehicle.PicturesLink is null or "" || vehicle.PicturesDirectory is not null)
                     {
                         continue;
@@ -122,7 +135,7 @@ namespace AuctionTigerScraper
                     try
                     {
                         await page.EvaluateExpressionAsync($"var butn = document.createElement('A'); butn.href = '{vehicle.PicturesLink}'; butn.text='test'; document.body.appendChild(butn);");
-                        string download = await downloadManager.WaitForDownload(page, vehicle.PicturesLink);
+                        download = await downloadManager.WaitForDownload(page, vehicle.PicturesLink);
                         ZipFile.ExtractToDirectory(download, downloadsPath);
                     }
                     catch (Exception e)
@@ -130,13 +143,14 @@ namespace AuctionTigerScraper
                         vehicle.PicturesDirectory = null;
                         continue;
                     }
-                    vehicle.PicturesCount = Directory.EnumerateFiles(downloadsPath, "*.*", SearchOption.AllDirectories).Select((link, index) => { File.Move(link, downloadsPath + "\\" + index + ".jpg"); return string.Empty; }).Count();
+                    vehicle.PicturesCount = Directory.EnumerateFiles(downloadsPath, "*.*", SearchOption.AllDirectories).Select((link, index) => { File.Move(link, Path.Combine(downloadsPath, index + ".jpg")); return string.Empty; }).Count();
                     vehicle.PicturesDirectory = downloadsPath;
+                    File.Delete(download);
                 }
             }
         }
 
-        private async Task UpdateVehicleInfo(IEnumerable<Auction> newAuctions, IEnumerable<Auction> expiredAuctions)
+        private async Task UpdateVehicleInfo(IEnumerable<Auction> newAuctions, IEnumerable<Auction> expiredAuctions, CancellationToken? cancellationToken = null)
         {
             Vehicle[] newVehicles = GetVehicles(newAuctions).ToArray();
             Vehicle[] expiredVehicles = GetVehicles(expiredAuctions).ToArray();
@@ -159,13 +173,13 @@ namespace AuctionTigerScraper
                     }
                 }
             }
-            await DownloadPicturesAsync(newVehicles);
+            await DownloadPicturesAsync(newVehicles, cancellationToken);
             AuctionsChanged?.Invoke(newVehicles, expiredVehicles);
         }
 
-        public async Task<bool> CheckForChangesAsync(CancellationToken cancellationToken)
+        public async Task<bool> CheckForChangesAsync(CancellationToken? cancellationToken = null)
         {
-            if (cancellationToken.IsCancellationRequested)
+            if (cancellationToken?.IsCancellationRequested ?? false)
                 return false;
             await page.ReloadAsync();
             List<Auction> currentAuctions = await GetAuctionsInfoAsync();
@@ -174,8 +188,8 @@ namespace AuctionTigerScraper
             if (newAuctions.Count() > 0 || expiredAuctions.Count() > 0)
             {
                 Auctions = currentAuctions;
-                await GetAllAuctionDocuments(Auctions);
-                await UpdateVehicleInfo(newAuctions, expiredAuctions);
+                await GetAllAuctionDocuments(Auctions, cancellationToken);
+                await UpdateVehicleInfo(newAuctions, expiredAuctions, cancellationToken);
             }
             return newAuctions.Count() > 0 || expiredAuctions.Count() > 0;
         }
@@ -190,7 +204,7 @@ namespace AuctionTigerScraper
             AuctionsChanged -= toBeRemoved;
         }
 
-        public async Task InitializeScraperAsync(ScraperOptions scraperOptions, CancellationToken cancellationToken)
+        public async Task InitializeScraperAsync(ScraperOptions scraperOptions, CancellationToken? cancellationToken = null)
         {
             await new BrowserFetcher().DownloadAsync(BrowserFetcher.DefaultRevision);
             browser = await Puppeteer.LaunchAsync(new LaunchOptions
@@ -198,6 +212,10 @@ namespace AuctionTigerScraper
                 Headless = true,
                 Args = new string[] { "--no-sandbox" },
             });
+            if (cancellationToken?.IsCancellationRequested ?? false)
+            {
+                return;
+            }
             page = await browser.NewPageAsync();
             await page.GoToAsync("https://icicilombard.procuretiger.com/");
             await LoginAsync(scraperOptions.Username, scraperOptions.Password);
@@ -208,7 +226,7 @@ namespace AuctionTigerScraper
             page.Dispose();
             browser.Dispose();
         }
-            
+
         public async ValueTask DisposeAsync()
         {
             await page.CloseAsync();
