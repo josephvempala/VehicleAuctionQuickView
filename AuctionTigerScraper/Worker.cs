@@ -22,7 +22,7 @@ namespace AuctionTigerScraper
         public Worker(ILogger<Worker> logger, IConfiguration configuration, IMongoClient mongoClient, IAuctionScraper auctionScraper)
         {
             _logger = logger;
-            _vehiclesCollection = mongoClient.GetDatabase("AuctionScraper").GetCollection<VehicleModel>("vehicles");
+            _vehiclesCollection = mongoClient.GetDatabase("auctionScraper").GetCollection<VehicleModel>("vehicles");
             _configuration = configuration;
             _scraper = auctionScraper;
             isFirstUpdate = true;
@@ -69,8 +69,10 @@ namespace AuctionTigerScraper
 
         public override async Task StartAsync(CancellationToken cancellationToken)
         {
-            ScraperOptions scraperOptions = new ScraperOptions();
-            _configuration.GetSection(nameof(ScraperOptions)).Bind(scraperOptions);
+            ScraperOptions scraperOptions = new ScraperOptions() {
+                Username = _configuration["ScraperOptions_Username"],
+                Password = _configuration["ScraperOptions_Password"]
+            };
             _scraper.ListenForChanges(UpdateDatabase);
             try
             {
